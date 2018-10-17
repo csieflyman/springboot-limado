@@ -1,0 +1,1132 @@
+swagger: '2.0'
+info:
+  title: Party API
+  description: Manipulate party data including User, Organization and Group
+  version: "1.0.0"
+# the domain of the service
+#host:
+# array of all schemes that your API supports
+schemes:
+  - http
+# will be prefixed to all paths
+basePath: /limado/api/v1
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /users:   
+    post: 
+      summary: Create user
+      description: Create user
+      parameters:
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'user'
+          3. identity must be unique in all users
+          4. parents must be the group or organization
+          5. children is disallowed"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - User
+      responses:
+        201:
+          description: user object including id
+          schema:
+            $ref: '#/definitions/Party'
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+  /users/{id}: 
+    put: 
+      summary: Update user
+      description: Update user
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'user'
+          3. identity must be unique in all users
+          4. parents must be the group or organization
+          5. children is disallowed"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - User
+      responses:
+        200:
+          description: No response body
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /users/{userId}/parents:
+    post:
+      summary: Add parents of specified user
+      description: Add parents of specified user
+      parameters:
+        - name: userId
+          in: path
+          description: user id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: "parents id array (valid type: group, organization)"
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - User
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or parent type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove parents of specified user
+      description: Remove parents of specified user
+      parameters:
+        - name: userId
+          in: path
+          description: user id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: parents id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - User
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /organizations:   
+    post: 
+      summary: Create Organization
+      description: Create Organization
+      parameters:
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'organization'
+          3. identity must be unique in all organizations
+          4. parents must be the group or organization
+          5. children must be the organization or user"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - Organization
+      responses:
+        201:
+          description: organization object including id
+          schema:
+            $ref: '#/definitions/Party'
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+  /organizations/{id}:
+    put: 
+      summary: Update Organization
+      description: Update Organization
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'organization'
+          3. identity must be unique in all organizations
+          4. parents must be the group or organization
+          5. children must be the organization or user"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /organizations/{organizationId}/child/{childId}:
+    post:
+      summary: Add a child of specified organization
+      description: Add a child of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid
+        - name: childId
+          in: path
+          description: child id
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or child type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+    put:
+      summary: Move a party to a specified organization
+      description: Move a party to a specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid
+        - name: childId
+          in: path
+          description: child id
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or child type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove a child of specified organization
+      description: Remove a child of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid
+        - name: childId
+          in: path
+          description: child id
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'       
+  /organizations/{organizationId}/children:
+    post:
+      summary: Add children of specified organization
+      description: Add children of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid 
+        - name: childrenIds
+          in: body
+          description: "children id array (valid type: organization, user)"
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or child type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove children of specified organization
+      description: Remove children of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid 
+        - name: childrenIds
+          in: body
+          description: children id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /organizations/{organizationId}/parents:
+    post:
+      summary: Add parents of specified organization
+      description: Add parents of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: "parents id array (valid type: group, organization)"
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or invalid parent type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove parents of specified organization
+      description: Remove parents of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organization id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: parents id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Organization
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /organizations/{organizationId}/descendants:
+    get:
+      summary: Get descendants of specified organization
+      description: Get descendants of specified organization
+      parameters:
+        - name: organizationId
+          in: path
+          description: organizationId
+          required: true
+          type: string
+          format: uuid
+        - name: q_predicates
+          in: query
+          description: q_predicates=[identity = user1;name = James]
+          type: string
+        - name: q_predicatesDisjunction
+          in: query
+          description: specifiy disjunction of q_predicates
+          type: boolean
+        - name: q_fetchRelations
+          in: query
+          description: q_fetchRelations=parents,children
+          type: string
+        - name: q_onlySize
+          in: query
+          description: return the amount of results if value is true
+          type: boolean
+        - name: q_sort
+          in: query
+          description: q_sort=+identity,-name (+ is asc, - is desc)
+          type: string
+        - name: q_offset
+          in: query
+          type: integer
+          format: int32
+        - name: q_limit
+          in: query
+          type: integer
+          format: int32
+      tags:
+        - Organization
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: Invalid uuid or query parameter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /groups:
+    post: 
+      summary: Create group
+      description: Create group
+      parameters:
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'group'
+          3. identity must be unique in all groups
+          4. parents must be the group
+          5. children must be the user, group or organization"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - Group
+      responses:
+        201:
+          description: group object include id
+          schema:
+            $ref: '#/definitions/Party'
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+  /groups/{id}:
+    put: 
+      summary: Update a group
+      description: Update a group
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: body
+          in: body
+          description: "
+          1. id, creationDate and modificationDate will be generated automatically
+          2. type value must be 'group'
+          3. identity must be unique in all groups
+          4. parents must be the group
+          5. children must be the user, group or organization"
+          required: true
+          schema:
+            $ref: '#/definitions/Party'
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: invalid property value
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /group/{groupId}/child/{childId}:
+    post:
+      summary: Add a child of specified group
+      description: Add a child of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid
+        - name: childId
+          in: path
+          description: child id
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or child type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+    delete:
+      summary: Remove a child of specified group
+      description: Remove a child of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid
+        - name: childId
+          in: path
+          description: child id
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'       
+  /groups/{groupId}/children:
+    post:
+      summary: Add children of specified group
+      description: Add children of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid 
+        - name: childrenIds
+          in: body
+          description: "children id array (valid type: group, organization, user)"
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or child type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove children of specified group
+      description: Remove children of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid 
+        - name: childrenIds
+          in: body
+          description: children id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /groups/{groupId}/parents:
+    post:
+      summary: Add parents of specified group
+      description: Add parents of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: "parents id array (valid type: group)"
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid or parent type
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Remove parents of specified group
+      description: Remove parents of specified group
+      parameters:
+        - name: groupId
+          in: path
+          description: group id
+          required: true
+          type: string
+          format: uuid 
+        - name: parentsIds
+          in: body
+          description: parents id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Group
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties:
+    delete:
+      summary: Delete party
+      description: Delete party
+      parameters:
+        - name: id
+          in: body
+          description: party id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      tags:
+        - Party
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+    get:
+      summary: Search party
+      description: Search party
+      parameters:
+        - name: q_predicates
+          in: query
+          description: q_predicates=[identity = user1;name = James]
+          type: string
+        - name: q_predicatesDisjunction
+          in: query
+          description: specifiy disjunction of q_predicates
+          type: boolean 
+        - name: q_fetchRelations
+          in: query
+          description: q_fetchRelations=parents,children
+          type: string
+        - name: q_onlySize
+          in: query
+          description: return the amount of results if value is true
+          type: boolean
+        - name: q_sort
+          in: query
+          description: q_sort=+identity,-name (+ is asc, - is desc)
+          type: string
+        - name: q_offset
+          in: query
+          type: integer
+          format: int32
+        - name: q_limit
+          in: query
+          type: integer
+          format: int32
+      tags:
+        - Party
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: invalid query parameter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/{id}:
+    get:
+      summary: Get party by specified id
+      operationId: getById
+      description: Get party by specified id
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: q_fetchRelations
+          in: query
+          description: q_fetchRelations=parents,children
+          type: string
+      tags:
+        - Party
+      responses:
+        200:
+          description: party object
+          schema:
+            $ref: '#/definitions/Party'
+        404:
+          description: party not exist
+          schema:
+            $ref: '#/definitions/Error'
+        400:
+          description: Invalid uuid or query parameter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/{id}/parents:
+    get:
+      summary: Get parents of specified party
+      description: Get parents of specified party
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Party
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/{id}/children:
+    get:
+      summary: Get children of specified party
+      description: Get children of specified party
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Party
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/{id}/ascendants:
+    get:
+      summary: Get ascendants of specified party
+      description: Get ascendants of specified party
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: q_predicates
+          in: query
+          description: q_predicates=[identity = user1;name = James]
+          type: string
+        - name: q_predicatesDisjunction
+          in: query
+          description: specifiy disjunction of q_predicates
+          type: boolean
+        - name: q_fetchRelations
+          in: query
+          description: q_fetchRelations=parents,children
+          type: string
+        - name: q_onlySize
+          in: query
+          description: return the amount of results if value is true
+          type: boolean
+        - name: q_sort
+          in: query
+          description: q_sort=+identity,-name (+ is asc, - is desc)
+          type: string
+        - name: q_offset
+          in: query
+          type: integer
+          format: int32
+        - name: q_limit
+          in: query
+          type: integer
+          format: int32
+      tags:
+        - Party
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: Invalid uuid or query parameter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/{id}/descendants:
+    get:
+      summary: Get descendants of specified party
+      description: Get descendants of specified party
+      parameters:
+        - name: id
+          in: path
+          description: party uuid
+          required: true
+          type: string
+          format: uuid
+        - name: q_predicates
+          in: query
+          description: q_predicates=[identity = user1;name = James]
+          type: string
+        - name: q_predicatesDisjunction
+          in: query
+          description: specifiy disjunction of q_predicates
+          type: boolean
+        - name: q_fetchRelations
+          in: query
+          description: q_fetchRelations=parents,children
+          type: string
+        - name: q_onlySize
+          in: query
+          description: return the amount of results if value is true
+          type: boolean
+        - name: q_sort
+          in: query
+          description: q_sort=+identity,-name (+ is asc, - is desc)
+          type: string
+        - name: q_offset
+          in: query
+          type: integer
+          format: int32
+        - name: q_limit
+          in: query
+          type: integer
+          format: int32
+      tags:
+        - Party
+      responses:
+        200:
+          description: party array
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Party'
+        400:
+          description: Invalid uuid or query parameter
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+  /parties/enable:
+    put:
+      summary: Enable party
+      description: Enable party
+      parameters:
+        - name: id
+          in: body
+          description: party id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      tags:
+        - Party
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error'
+  /parties/disable:
+    put:
+      summary: Disable party
+      description: Disable party
+      parameters:
+        - name: id
+          in: body
+          description: party id array
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      tags:
+        - Party
+      responses:
+        200:
+          description: No response body
+        400:
+          description: Invalid uuid
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unknown Error
+          schema:
+            $ref: '#/definitions/Error' 
+definitions:
+  Party:
+    type: object
+    required:
+      - type
+      - identity
+      - name
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: auto generated
+      type:
+        type: string
+        description: enum value (user, organization, group)
+      identity:
+        type: string
+        minLength: 2
+        maxLength: 16
+        pattern: ^[a-zA-z]([\\w\\_\\-])+$
+        description: identity value must be unique in certain party type
+      name:
+        type: string
+        maxLength: 16
+        description: value can be any character
+      email:
+        type: string
+        pattern: ^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$
+      enabled:
+        type: boolean
+        default: true
+      creationDate:
+        type: string
+        format: date-time
+        description: auto generated. pattern yyyy-MM-dd'T'HH:mm:ss.SSSZZ
+      modificationDate:
+        type: string
+        format: date-time
+        description: auto generated. pattern yyyy-MM-dd'T'HH:mm:ss.SSSZZ
+      parents:
+        type: array
+        items:
+          $ref: '#/definitions/Party'
+        description: parent object of the party
+      children:
+        type: array
+        items:
+          $ref: '#/definitions/Party'
+        description: child object of the party
+  Error:
+    type: object
+    properties:
+      errorCode:
+        type: string
+      message:
+        type: string
+      detail:
+        type: string

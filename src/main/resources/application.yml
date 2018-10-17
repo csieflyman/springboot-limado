@@ -1,0 +1,55 @@
+spring:
+	application:
+		name: limado
+	datasource:
+		driverClassName: ${DB_DIRVER:com.mysql.jdbc.Driver}
+		url: ${DB_URL:jdbc:mysql://localhost/limado?characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false}
+		username: ${DB_USER:limado}
+		password: ${DB_PASSWORD:limado}
+		hikari:
+			connection-timeout: 20000
+			minimum-idle: 5
+			maximum-pool-size: 12
+			idle-timeout: 300000
+			max-lifetime: 1200000
+	jpa:
+		properties:
+			hibernate:
+				format_sql: true
+	cache:
+		type: redis
+		#cache-names:
+	redis:
+		host: ${REDIS_HOST:localhost}
+		port: ${REDIS_PORT:6379}
+		password: ${REDIS_PASSWORD:}
+		database: 0
+		timeout: 0
+		lettuce:
+			shutdown-timeout: 200ms
+			pool:
+				max-active: 5
+				max-wait: -1
+				max-idle: 5
+				min-idle: 1
+		cache:
+			redis:
+				cache-null-values: false
+				time-to-live: 600000
+				use-key-prefix: true
+				#key-prefix:
+	messages:
+		basename: message
+server:
+	port: 8080
+
+---
+spring:
+	profiles: dev
+server:
+	port: 8080
+---
+spring:
+    profiles: prod
+server:
+    port: 8080
