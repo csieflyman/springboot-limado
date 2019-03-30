@@ -8,3 +8,6 @@
  */
 
 rootProject.name = 'springboot-limado'
+include 'application'
+include 'library'
+
