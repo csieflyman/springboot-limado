@@ -121,6 +121,12 @@ public abstract class AbstractJPADaoImpl<T extends Identifiable<ID>, ID extends 
         return count;
     }
 
+    @Override
+    public Set<ID> findIds(Query query) {
+        query.fetchProperties(JPAUtils.getIdPropertyName(clazz));
+        return find(query).stream().map(Identifiable::getId).collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
     private CriteriaQuery<Tuple> toJpaQuery(Query query, CriteriaBuilder cb) {
         CriteriaQuery<Tuple> jpaQuery = cb.createTupleQuery();
         Root<T> root = jpaQuery.from(clazz);

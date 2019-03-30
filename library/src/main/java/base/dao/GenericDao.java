@@ -7,6 +7,7 @@ import base.util.query.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author csieflyman
@@ -30,4 +31,6 @@ public interface GenericDao<T extends Identifiable<ID>, ID> {
     List<T> find(Query query);
 
     long findSize(Query query);
+
+    Set<ID> findIds(Query query);
 }

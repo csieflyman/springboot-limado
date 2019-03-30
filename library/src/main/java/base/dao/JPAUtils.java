@@ -124,6 +124,10 @@ public class JPAUtils {
         return Stream.of(clazz.getFields()).filter(JPAUtils::isColumn).map(Field::getName).collect(Collectors.toSet());
     }
 
+    public static String getIdPropertyName(Class clazz) {
+        return Stream.of(clazz.getFields()).filter(JPAUtils::isIdColumn).map(Field::getName).findFirst().get();
+    }
+
     private static String predicateToSql(String tableAlias, Predicate predicate) {
         if(predicate.isJunction()) {
             Junction junction = (Junction) predicate;
