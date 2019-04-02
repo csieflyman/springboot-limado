@@ -5,6 +5,7 @@ import base.util.query.Query;
 import party.model.Party;
 import party.model.PartyType;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -42,11 +43,11 @@ public interface PartyService<T extends Party> extends GenericService<T, UUID> {
 
     void removeChild(T parent, Party child);
 
-    void addChildren(T parent, Set<Party> children);
+    void addChildren(T parent, Collection<Party> children);
 
-    void removeChildren(T parent, Set<Party> children);
+    void removeChildren(T parent, Collection<Party> children);
 
-    void addParents(T child, Set<Party> parents);
+    void addParents(T child, Collection<Party> parents);
 
-    void removeParents(T child, Set<Party> parents);
+    void removeParents(T child, Collection<Party> parents);
 }

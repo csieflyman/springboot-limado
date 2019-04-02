@@ -2,8 +2,6 @@ package log.model;
 
 import base.model.BaseModel;
 import base.util.DateTimeUtils;
-import base.util.Subject;
-import base.util.ThreadLocalUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -12,6 +10,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringExclude;
+import util.Subject;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -30,18 +29,10 @@ public class ErrorLog extends BaseModel<Long> {
     }
 
     public ErrorLog(Subject subject, Throwable ex) {
-        source = ThreadLocalUtils.getAuthSourceName();
         if(subject != null) {
             if (subject.isAdmin()) {
-                // 使用特定值 "0" 代表 admin
-                brandId = 0L;
-                storeId = 0L;
             } else {
                 identity = subject.getIdentity();
-                brandId = subject.getBrandId();
-                if (subject.isStoreAdmin()) {
-                    storeId = subject.getStoreId();
-                }
             }
         }
         if(ex != null) {

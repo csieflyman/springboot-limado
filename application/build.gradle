@@ -53,6 +53,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
     implementation group: 'org.hashids', name: 'hashids', version: '1.0.3'
     implementation group: 'org.hibernate.validator', name: 'hibernate-validator', version: '6.0.13.Final'
+    implementation group: 'com.esotericsoftware', name: 'kryo', version: '4.0.2'
 
     runtimeOnly("org.springframework.boot:spring-boot-starter-actuator")
 

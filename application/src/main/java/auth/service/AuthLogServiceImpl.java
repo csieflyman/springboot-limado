@@ -2,8 +2,7 @@ package auth.service;
 
 import auth.dao.AuthLogDao;
 import auth.model.AuthLog;
-import base.util.db.EbeanTransactional;
-import com.google.inject.Inject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -11,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 public class AuthLogServiceImpl implements AuthLogService {
 
-    @Inject
+    @Autowired
     private AuthLogDao authLogDao;
 
     @Transactional

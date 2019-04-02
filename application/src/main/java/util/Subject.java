@@ -1,13 +1,13 @@
 package util;
 
-import admin.model.Store;
-import admin.model.User;
 import com.google.common.base.Preconditions;
-import member.model.Member;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import party.model.GlobalRole;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author csieflyman
@@ -18,14 +18,15 @@ public class Subject implements Serializable{
 
     private String identity;
     private String account;
-    private SubjectRole role;
+    private Set<GlobalRole> roles = new HashSet<>();
 
     private Subject() {
+        roles.add(GlobalRole.USER);
     }
 
     public static Subject createAdmin() {
         Subject subject = new Subject();
-        subject.role = SubjectRole.ADMIN;
+        subject.roles.add(GlobalRole.SYS_ADMIN);
         return subject;
     }
 
@@ -39,52 +40,12 @@ public class Subject implements Serializable{
         return account;
     }
 
-    public Long getBrandId() {
-        Preconditions.checkNotNull(brandId);
-        return brandId;
-    }
-
-    public void setBrandId(Long brandId) {
-        Preconditions.checkNotNull(brandId);
-        Preconditions.checkState(isAdmin() || isBrandAdmin());
-        this.brandId = brandId;
-    }
-
-    public Long getStoreId() {
-        Preconditions.checkNotNull(storeId);
-        return storeId;
-    }
-
-    public void setStoreId(Long storeId) {
-        Preconditions.checkNotNull(storeId);
-        Preconditions.checkState(isAdmin() || isBrandAdmin() || isStoreAdmin());
-        this.storeId = storeId;
-    }
-
-    public Long getUserId() {
-        Preconditions.checkNotNull(userId);
-        return userId;
-    }
-
-    public SubjectRole getRole() {
-        Preconditions.checkNotNull(role);
-        return role;
+    public Set<GlobalRole> getRoles() {
+        return roles;
     }
 
     public Boolean isAdmin() {
-        return role == SubjectRole.ADMIN;
-    }
-
-    public boolean isBrandAdmin() {
-        return role == SubjectRole.BRAND_ADMIN;
-    }
-
-    public boolean isStoreAdmin() {
-        return role == SubjectRole.STORE_ADMIN;
-    }
-
-    public boolean isMember() {
-        return role == SubjectRole.MEMBER;
+        return roles.contains(GlobalRole.SYS_ADMIN);
     }
 
     @Override
@@ -103,6 +64,6 @@ public class Subject implements Serializable{
 
     @Override
     public String toString() {
-        return brandId + "/" + storeId + "/" + identity + "(" + account + ")" + "(" + role + ")";
+        return identity + "(" + account + ")" + "(" + roles + ")";
     }
 }

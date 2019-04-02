@@ -1,7 +1,5 @@
 package graph;
 
-import graph.DagEdgeDaoImpl;
-import graph.PartyDagEdge;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;

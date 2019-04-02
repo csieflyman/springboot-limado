@@ -3,9 +3,6 @@ package log.service;
 import base.dto.response.BatchResponse;
 import base.exception.BadRequestException;
 import base.util.Json;
-import base.util.Subject;
-import base.util.ThreadLocalUtils;
-import base.util.db.EbeanTransactional;
 import com.google.common.collect.Sets;
 import log.dao.ErrorLogDao;
 import log.model.ErrorLog;
@@ -14,7 +11,8 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import play.libs.Json;
+import util.Subject;
+import util.ThreadLocalUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -30,7 +28,6 @@ public class ErrorLogServiceImpl implements ErrorLogService {
     @Autowired
     private ErrorLogDao errorLogDao;
 
-    @Transactional
     @Override
     public void create(HttpServletRequest request, Throwable e) {
         ErrorLog errorLog = new ErrorLog(getSubject(), e);
@@ -73,8 +70,8 @@ public class ErrorLogServiceImpl implements ErrorLogService {
     @Override
     public void create(String api, String body, Throwable e) {
         ErrorLog errorLog = new ErrorLog(getSubject(), e);
-        errorLog.api = api;
-        errorLog.body = body;
+        errorLog.setApi(api);
+        errorLog.setBody(body);
         create(errorLog);
     }
 
@@ -92,12 +89,12 @@ public class ErrorLogServiceImpl implements ErrorLogService {
         return subject;
     }
 
-    @EbeanTransactional
+    @Transactional
     public void saveToDB(ErrorLog errorLog) {
         try {
             errorLogDao.create(errorLog);
         } catch (Throwable ee) {
-            logger.error("fail to save ErrorLog", ee);
+            log.error("fail to save ErrorLog", ee);
         }
     }
 }

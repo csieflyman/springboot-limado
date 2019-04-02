@@ -11,6 +11,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -93,6 +94,11 @@ public abstract class Party extends EntityModel<UUID> implements Resource<UUID> 
         if (parents == null)
             parents = new HashSet<>();
         parents.remove(parent);
+    }
+
+    public void removeRelations() {
+        setParents(null);
+        setChildren(null);
     }
 
     @Override

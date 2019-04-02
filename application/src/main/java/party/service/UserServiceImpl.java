@@ -12,6 +12,7 @@ import party.model.Party;
 import party.model.PartyType;
 import party.model.User;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -33,14 +34,14 @@ public class UserServiceImpl extends PartyServiceImpl<User> implements UserServi
     }
 
     @Override
-    public void addChildren(User user, Set<Party> children) {
+    public void addChildren(User user, Collection<Party> children) {
         if (children.isEmpty())
             return;
         throw new UnsupportedOperationException(String.format("user %s can't add children", user));
     }
 
     @Override
-    public void removeChildren(User user, Set<Party> children) {
+    public void removeChildren(User user, Collection<Party> children) {
         if (children.isEmpty())
             return;
         throw new UnsupportedOperationException(String.format("user %s can't remove children", user));
@@ -58,7 +59,7 @@ public class UserServiceImpl extends PartyServiceImpl<User> implements UserServi
 
     @Transactional
     @Override
-    public void addParents(User child, Set<Party> parents) {
+    public void addParents(User child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -81,7 +82,7 @@ public class UserServiceImpl extends PartyServiceImpl<User> implements UserServi
 
     @Transactional
     @Override
-    public void removeParents(User child, Set<Party> parents) {
+    public void removeParents(User child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 

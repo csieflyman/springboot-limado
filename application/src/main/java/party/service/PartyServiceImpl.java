@@ -89,17 +89,17 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
         Collection<Party> removeChildren = children == null ? Collections.emptySet() : CollectionUtils.subtract(oldParty.getChildren(), children);
         if (!removeChildren.isEmpty()) {
             party = get(party, Party.RELATION_CHILDREN);
-            removeChildren(party, new HashSet<>(removeChildren));
+            removeChildren(party, removeChildren);
         }
         if (!removeParents.isEmpty()) {
-            removeParents(party, new HashSet<>(removeParents));
+            removeParents(party, removeParents);
         }
         if (!addChildren.isEmpty()) {
             party = get(party, Party.RELATION_CHILDREN);
-            addChildren(party, new HashSet<>(addChildren));
+            addChildren(party, addChildren);
         }
         if (!addParents.isEmpty()) {
-            addParents(party, new HashSet<>(addParents));
+            addParents(party, addParents);
         }
     }
 
@@ -245,7 +245,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
     @Transactional
     @Override
-    public void addChildren(T parent, Set<Party> children) {
+    public void addChildren(T parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -257,7 +257,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
     @Transactional
     @Override
-    public void removeChildren(T parent, Set<Party> children) {
+    public void removeChildren(T parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -269,7 +269,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
     @Transactional
     @Override
-    public void addParents(T child, Set<Party> parents) {
+    public void addParents(T child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -281,7 +281,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
     @Transactional
     @Override
-    public void removeParents(T child, Set<Party> parents) {
+    public void removeParents(T child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 

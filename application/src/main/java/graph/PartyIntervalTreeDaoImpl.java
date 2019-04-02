@@ -1,7 +1,5 @@
 package graph;
 
-import graph.IntervalTreeDaoImpl;
-import graph.PartyIntervalTreeNode;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;

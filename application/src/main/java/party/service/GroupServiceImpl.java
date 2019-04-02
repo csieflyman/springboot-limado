@@ -10,7 +10,7 @@ import party.model.Group;
 import party.model.Party;
 import party.model.PartyType;
 
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * @author csieflyman
@@ -25,7 +25,7 @@ public class GroupServiceImpl extends PartyServiceImpl<Group> implements GroupSe
     }
 
     @Override
-    public void addParents(Group child, Set<Party> parents) {
+    public void addParents(Group child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 

@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 public class LoggingInterceptor extends HandlerInterceptorAdapter {
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         log.info("========== " + request.getMethod() + " ( " + request.getRequestURI() + " )" + " ==========");
         long startTime = System.currentTimeMillis();
         request.setAttribute("startTime", startTime);
@@ -20,7 +20,7 @@ public class LoggingInterceptor extends HandlerInterceptorAdapter {
     }
 
     @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
         long startTime = (Long) request.getAttribute("startTime");
         long endTime = System.currentTimeMillis();
         long executeTime = endTime - startTime;

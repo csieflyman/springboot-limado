@@ -12,7 +12,7 @@ public enum ResponseCode {
 
     // 通用錯誤 - Request
     REQUEST_BAD_DATA(400, "1000", false),
-    REQUEST_UNAUTHORIZED(401, "1001", false),
+    UNAUTHENTICATED(401, "1001", false),
     REQUEST_FORBIDDEN(403, "1002", false),
     REQUEST_RESOURCE_CONFLICT(409, "1003", false),
     REQUEST_BATCH_FAILURE(200, "1004", true);

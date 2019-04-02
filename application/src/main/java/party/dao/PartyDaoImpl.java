@@ -9,10 +9,7 @@ import org.springframework.stereotype.Repository;
 import party.model.Party;
 
 import javax.persistence.PersistenceUnitUtil;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +48,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
     }
 
     @Override
-    public void addChildren(Party parent, Set<Party> children) {
+    public void addChildren(Party parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -71,7 +68,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
     }
 
     @Override
-    public void removeChildren(Party parent, Set<Party> children) {
+    public void removeChildren(Party parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -91,7 +88,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
     }
 
     @Override
-    public void addParents(Party child, Set<Party> parents) {
+    public void addParents(Party child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -110,7 +107,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
     }
 
     @Override
-    public void removeParents(Party child, Set<Party> parents) {
+    public void removeParents(Party child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -142,7 +139,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
         return parent;
     }
 
-    private Set<Party> loadParents(Set<Party> parents) {
+    private Collection<Party> loadParents(Collection<Party> parents) {
         if (parents.stream().allMatch(this::isLoadedChild))
             return parents;
 
@@ -163,7 +160,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
         return getById(childId).orElseThrow(() -> new IllegalArgumentException(String.format("party %s is not exist", childId)));
     }
 
-    private Set<Party> loadChildren(Set<Party> children) {
+    private Collection<Party> loadChildren(Collection<Party> children) {
         if (children.stream().allMatch(this::isLoadedChild))
             return children;
 

@@ -79,7 +79,7 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
 
     @Transactional
     @Override
-    public void addChildren(Organization parent, Set<Party> children) {
+    public void addChildren(Organization parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -98,7 +98,7 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
 
     @Transactional
     @Override
-    public void removeChildren(Organization parent, Set<Party> children) {
+    public void removeChildren(Organization parent, Collection<Party> children) {
         Preconditions.checkArgument(parent != null, "parent must not be null");
         Preconditions.checkArgument(children != null, "children must not be null");
 
@@ -111,7 +111,7 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
 
     @Transactional
     @Override
-    public void addParents(Organization child, Set<Party> parents) {
+    public void addParents(Organization child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -135,7 +135,7 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
 
     @Transactional
     @Override
-    public void removeParents(Organization child, Set<Party> parents) {
+    public void removeParents(Organization child, Collection<Party> parents) {
         Preconditions.checkArgument(child != null, "child must not be null");
         Preconditions.checkArgument(parents != null, "parents must not be null");
 
@@ -173,7 +173,7 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
         return new LinkedHashSet<>(parties);
     }
 
-    private Set<Party> loadChildren(Set<Party> children) {
+    private Collection<Party> loadChildren(Collection<Party> children) {
         Set<UUID> childrenIds = children.stream().map(Party::getId).collect(Collectors.toSet());
         children = new HashSet<>(find(Query.create().where().in("id", childrenIds).end().fetchRelations(Party.RELATION_PARENT)));
         if (children.size() != childrenIds.size()) {

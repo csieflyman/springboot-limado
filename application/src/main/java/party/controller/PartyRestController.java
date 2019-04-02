@@ -16,10 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import party.dto.PartyCreateForm;
 import party.dto.PartyForm;
 import party.model.Party;
-import party.model.PartyType;
 import party.service.PartyService;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -60,28 +61,20 @@ public class PartyRestController extends AbstractController {
     public Party getById(@PathVariable String id, @RequestParam(name = Query.Q_FETCH_RELATIONS, required = false) String fetchRelations) {
         log.debug("getById: " + id + " , fetchRelations = " + fetchRelations);
         UUID uuid = UUID.fromString(id);
-        Party party;
-        if (fetchRelations != null) {
-            party = partyService.getById(uuid, fetchRelations.split(","));
-        } else {
-            party = partyService.getById(uuid);
-        }
-        return party;
+        return fetchRelations != null ? partyService.getById(uuid, fetchRelations.split(",")) : partyService.getById(uuid);
     }
 
     @GetMapping({"/{id}/parents"})
     public Set<Party> getParents(@PathVariable String id) {
-        UUID uuid = UUID.fromString(id);
-        Set<Party> parents = partyService.getParents(uuid);
-        removePartyRelations(parents);
+        Set<Party> parents = partyService.getParents(UUID.fromString(id));
+        parents.forEach(Party::removeRelations); // do not serialize relations
         return parents;
     }
 
     @GetMapping({"/{id}/children"})
     public Set<Party> getChildren(@PathVariable String id) {
-        UUID uuid = UUID.fromString(id);
-        Set<Party> children = partyService.getChildren(uuid);
-        removePartyRelations(children);
+        Set<Party> children = partyService.getChildren(UUID.fromString(id));
+        children.forEach(Party::removeRelations); // do not serialize relations
         return children;
     }
 
@@ -93,11 +86,7 @@ public class PartyRestController extends AbstractController {
             Query params = Query.create(requestParam);
             List<Party> parties = partyService.find(params);
             parties.retainAll(ascendants);
-            if (params.isOnlySize()) {
-                return parties.size();
-            } else {
-                return parties;
-            }
+            return params.isOnlySize() ? parties.size() : parties;
         }
         return ascendants;
     }
@@ -110,11 +99,7 @@ public class PartyRestController extends AbstractController {
             Query params = Query.create(requestParam);
             List<Party> parties = partyService.find(params);
             parties.retainAll(descendants);
-            if (params.isOnlySize()) {
-                return parties.size();
-            } else {
-                return parties;
-            }
+            return params.isOnlySize() ? parties.size() : parties;
         }
         return descendants;
     }
@@ -128,30 +113,20 @@ public class PartyRestController extends AbstractController {
     @PutMapping("/enable")
     public void enable(@RequestBody List<String> idList) {
         log.debug("enable: " + idList);
-        Set<UUID> uuids = idList.stream().map(UUID::fromString).collect(Collectors.toSet());
-        partyService.enable(uuids);
+        partyService.enable(idList.stream().map(UUID::fromString).collect(Collectors.toSet()));
     }
 
     @PutMapping("/disable")
     public void disable(@RequestBody List<String> idList) {
         log.debug("disable: " + idList);
-        Set<UUID> uuids = idList.stream().map(UUID::fromString).collect(Collectors.toSet());
-        partyService.disable(uuids);
+        partyService.disable(idList.stream().map(UUID::fromString).collect(Collectors.toSet()));
     }
 
     @DeleteMapping
     public void deleteByIds(@RequestBody List<String> idList) {
         log.debug("delete: " + idList);
-        Set<UUID> uuids = idList.stream().map(UUID::fromString).collect(Collectors.toSet());
-
-        Query params = Query.create().in("id", uuids);
-        List<Party> parties = partyService.find(params);
-
-        Map<PartyType, List<Party>> partyTypeMap = parties.stream().collect(Collectors.groupingBy(Party::getType));
-        for(PartyType type: partyTypeMap.keySet()) {
-            PartyService<Party> partyService = BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PartyService.class, type.getId());
-            partyTypeMap.get(type).forEach(partyService::delete);
-        }
+        partyService.find(Query.create().where().in("id", idList.stream().map(UUID::fromString).collect(Collectors.toSet())).end())
+            .forEach(party -> BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PartyService.class, party.getType().getId()).delete(party));
     }
 
     @PostMapping("/{parentId}/children/{childId}")
@@ -165,10 +140,8 @@ public class PartyRestController extends AbstractController {
     }
 
     private void updateChild(String parentId, String childId, boolean isAdd) {
-        UUID parentUUID = UUID.fromString(parentId);
-        UUID childUUID = UUID.fromString(childId);
-        Party parent = partyService.getById(parentUUID, Party.RELATION_PARENT);
-        Party child = partyService.getById(childUUID);
+        Party parent = partyService.getById(UUID.fromString(parentId), Party.RELATION_PARENT);
+        Party child = partyService.getById(UUID.fromString(childId));
         PartyService partyService = BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PartyService.class, parent.getType().getId());
         if(isAdd)
             partyService.addChild(parent, child);
@@ -190,47 +163,35 @@ public class PartyRestController extends AbstractController {
         if (childrenIds.isEmpty())
             return;
 
-        UUID parentUUID = UUID.fromString(parentId);
-        Set<UUID> childrenUUIDs = childrenIds.stream().map(UUID::fromString).collect(Collectors.toSet());
-        Party parent = partyService.getById(parentUUID, Party.RELATION_PARENT);
-        List<Party> children = partyService.findParties(Query.create().in("id", childrenUUIDs));
+        Party parent = partyService.getById(UUID.fromString(parentId), Party.RELATION_PARENT);
+        List<Party> children = partyService.findParties(Query.create().where().in("id", childrenIds.stream().map(UUID::fromString).collect(Collectors.toSet())).end());
         PartyService partyService = BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PartyService.class, parent.getType().getId());
         if(isAdd)
-            partyService.addChildren(parent, new HashSet<>(children));
+            partyService.addChildren(parent, children);
         else
-            partyService.removeChildren(parent, new HashSet<>(children));
+            partyService.removeChildren(parent, children);
     }
 
     @PostMapping(value = "/{childId}/parents", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void addParents(@PathVariable String childId, @RequestBody List<String> parentsIds) {
-        updateChildren(childId, parentsIds, true);
+        updateParents(childId, parentsIds, true);
     }
 
     @DeleteMapping(value = "/{childId}/parents", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void removeParents(@PathVariable String childId, @RequestBody List<String> parentsIds) {
-        updateChildren(childId, parentsIds, false);
+        updateParents(childId, parentsIds, false);
     }
 
     private void updateParents(String childId, List<String> parentsIds, boolean isAdd) {
         if (parentsIds.isEmpty())
             return;
 
-        UUID childUUID = UUID.fromString(childId);
-        Set<UUID> parentsUUIDs = parentsIds.stream().map(UUID::fromString).collect(Collectors.toSet());
-        Party child = partyService.getById(childUUID);
-        List<Party> parents = partyService.findParties(Query.create().in("id", parentsUUIDs));
+        Party child = partyService.getById(UUID.fromString(childId));
+        List<Party> parents = partyService.findParties(Query.create().where().in("id", parentsIds.stream().map(UUID::fromString).collect(Collectors.toSet())).end());
         PartyService partyService = BeanFactoryAnnotationUtils.qualifiedBeanOfType(beanFactory, PartyService.class, child.getType().getId());
         if(isAdd)
-            partyService.addParents(child, new HashSet<>(parents));
+            partyService.addParents(child, parents);
         else
-            partyService.removeParents(child, new HashSet<>(parents));
-    }
-
-    // do not serialize relations
-    private void removePartyRelations(Collection<Party> parties) {
-        if (parties != null) {
-            parties.forEach(party -> party.setParents(null));
-            parties.forEach(party -> party.setChildren(null));
-        }
+            partyService.removeParents(child, parents);
     }
 }

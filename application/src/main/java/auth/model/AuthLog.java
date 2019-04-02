@@ -1,14 +1,10 @@
 package auth.model;
 
 import base.model.BaseModel;
-import base.model.Identifiable;
 import base.util.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,8 +21,7 @@ public class AuthLog extends BaseModel<Long> {
 
     private static final long serialVersionUID = -155256950440207989L;
 
-    public AuthLog(String brandName, String account) {
-        this.brandName = brandName.length() > 64 ? brandName.substring(0, 64) : brandName;
+    public AuthLog(String account) {
         this.account = account.length() > 255 ? account.substring(0, 255) : account;
     }
 
@@ -45,9 +40,6 @@ public class AuthLog extends BaseModel<Long> {
 
     @Column
     private String errorMsg;
-
-    @Column
-    private String source;
 
     @Column
     private String ip;
