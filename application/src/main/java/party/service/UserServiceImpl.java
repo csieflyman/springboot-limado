@@ -2,6 +2,7 @@ package party.service;
 
 import com.google.common.base.Preconditions;
 import graph.IntervalTreeDao;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.UUID;
 /**
  * @author csieflyman
  */
+@Slf4j
 @Service("user")
 public class UserServiceImpl extends PartyServiceImpl<User> implements UserService {
 

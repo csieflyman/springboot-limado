@@ -133,7 +133,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
             return parent;
 
         UUID parentId = parent.getId();
-        List<T> parties = find(Query.create().eq("id", parentId).fetchRelations(Party.RELATION_CHILDREN));
+        List<T> parties = find(Query.create().where().eq("id", parentId).end().fetchRelations(Party.RELATION_CHILDREN));
         parent = parties.isEmpty() ? null : parties.get(0);
 
         if (parent == null) {
@@ -147,7 +147,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
             return parents;
 
         Set<UUID> parentsIds = parents.stream().map(Party::getId).collect(Collectors.toSet());
-        parents = new HashSet<>(find(Query.create().in("id", parentsIds).fetchRelations(Party.RELATION_CHILDREN)));
+        parents = new HashSet<>(find(Query.create().where().in("id", parentsIds).end().fetchRelations(Party.RELATION_CHILDREN)));
         if (parents.size() != parentsIds.size()) {
             Set<UUID> foundParentsIds = parents.stream().map(Party::getId).collect(Collectors.toSet());
             throw new IllegalArgumentException(String.format("parents id %s are not exist", CollectionUtils.subtract(parentsIds, foundParentsIds)));
@@ -168,7 +168,7 @@ public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> i
             return children;
 
         Set<UUID> childrenIds = children.stream().map(Party::getId).collect(Collectors.toSet());
-        children = new HashSet<>(find(Query.create().eq("id", childrenIds)));
+        children = new HashSet<>(find(Query.create().where().eq("id", childrenIds).end()));
         if (children.size() != childrenIds.size()) {
             Set<UUID> foundChildrenIds = children.stream().map(Party::getId).collect(Collectors.toSet());
             throw new IllegalArgumentException(String.format("children id %s are not exist", CollectionUtils.subtract(childrenIds, foundChildrenIds)));

@@ -139,8 +139,8 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
     }
 
     private void updateFollowUpNodesOfParentTree(NodeType parentNode, int start, boolean incrementOffset, int offset) {
-        List<NodeType> nodes = find(Query.create().gt("low", start)
-                .eq("treeId", parentNode.getTreeId()).eq("treeType", getTreeType()));
+        List<NodeType> nodes = find(Query.create().where().gt("low", start)
+                .eq("treeId", parentNode.getTreeId()).eq("treeType", getTreeType()).end());
         Set<Long> ids = nodes.stream().map(NodeType::getId).collect(Collectors.toSet());
         logger.debug("ids = {}", ids);
         if (ids.isEmpty())
@@ -150,7 +150,7 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
         StringBuilder sb = new StringBuilder();
         sb.append("update ").append(getEntityName()).append(" set low = low ").append(operator).append(" :offset, ")
                 .append("high = high ").append(operator).append(" :offset ")
-                .append("where id in :ids");
+                .append("and id in :ids");
         javax.persistence.Query query = em.createQuery(sb.toString());
         query.setParameter("offset", offset);
         query.setParameter("ids", ids);
@@ -161,8 +161,8 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
     }
 
     private void updateAncestorsOfParentTree(NodeType parentNode, boolean incrementOffset, int offset) {
-        List<NodeType> nodes = find(Query.create().le("low", parentNode.getLow()).ge("high", parentNode.getHigh())
-                .eq("treeId", parentNode.getTreeId()).eq("treeType", getTreeType()));
+        List<NodeType> nodes = find(Query.create().where().le("low", parentNode.getLow()).ge("high", parentNode.getHigh())
+                .eq("treeId", parentNode.getTreeId()).eq("treeType", getTreeType()).end());
         Set<Long> ids = nodes.stream().map(NodeType::getId).collect(Collectors.toSet());
         logger.debug("ids = {}", ids);
         if (ids.isEmpty())
@@ -171,7 +171,7 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
         String operator = incrementOffset ? "+" : "-";
         StringBuilder sb = new StringBuilder();
         sb.append("update ").append(getEntityName()).append(" set high = high ").append(operator).append(" :offset ")
-                .append("where id in :ids");
+                .append("and id in :ids");
         javax.persistence.Query query = em.createQuery(sb.toString());
         query.setParameter("offset", offset);
         query.setParameter("ids", ids);
@@ -182,8 +182,8 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
     }
 
     private void updateChildTree(NodeType childNode, String oldTreeId, String newTreeId, boolean incrementOffset, int offset) {
-        List<NodeType> nodes = find(Query.create().ge("low", childNode.getLow()).le("high", childNode.getHigh())
-                .eq("treeId", oldTreeId).eq("treeType", getTreeType()));
+        List<NodeType> nodes = find(Query.create().where().ge("low", childNode.getLow()).le("high", childNode.getHigh())
+                .eq("treeId", oldTreeId).eq("treeType", getTreeType()).end());
         Set<Long> ids = nodes.stream().map(NodeType::getId).collect(Collectors.toSet());
         logger.debug("ids = {}", ids);
         if (ids.isEmpty())
@@ -193,7 +193,7 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
         StringBuilder sb = new StringBuilder();
         sb.append("update ").append(getEntityName()).append(" set low = low ").append(operator).append(" :offset, ")
                 .append("high = high ").append(operator).append(" :offset, treeId = :newTreeId ")
-                .append("where id in :ids");
+                .append("and id in :ids");
         javax.persistence.Query query = em.createQuery(sb.toString());
         query.setParameter("offset", offset);
         query.setParameter("newTreeId", newTreeId);
@@ -210,15 +210,15 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
         if (isLeaf(node))
             return Collections.emptyList();
 
-        return find(Query.create().gt("low", node.getLow()).lt("high", node.getHigh())
-                .eq("treeId", node.getTreeId()).eq("treeType", getTreeType())
+        return find(Query.create().where().gt("low", node.getLow()).lt("high", node.getHigh())
+                .eq("treeId", node.getTreeId()).eq("treeType", getTreeType()).end()
                 .orderByAsc("low"));
     }
 
     private NodeType getNode(NodeIdType nodeId) {
         Preconditions.checkArgument(nodeId != null, "nodeId must not be null");
 
-        List<NodeType> result = find(Query.create().eq("nodeId", nodeId).eq("treeType", getTreeType()));
+        List<NodeType> result = find(Query.create().where().eq("nodeId", nodeId).eq("treeType", getTreeType()).end());
         return result.isEmpty() ? null : result.get(0);
     }
 
@@ -228,8 +228,8 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
         if (isRoot(node))
             return null;
 
-        List<NodeType> ancestors = find(Query.create().lt("low", node.getLow()).gt("high", node.getHigh())
-                .eq("treeId", node.getTreeId()).eq("treeType", getTreeType()));
+        List<NodeType> ancestors = find(Query.create().where().lt("low", node.getLow()).gt("high", node.getHigh())
+                .eq("treeId", node.getTreeId()).eq("treeType", getTreeType()).end());
         return ancestors.stream().min(Comparator.comparing(ancestor -> node.getLow() - ancestor.getLow())).get();
     }
 

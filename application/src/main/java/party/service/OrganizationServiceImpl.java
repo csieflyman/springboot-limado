@@ -3,9 +3,8 @@ package party.service;
 import base.util.query.Query;
 import com.google.common.base.Preconditions;
 import graph.IntervalTreeDao;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -21,10 +20,9 @@ import java.util.stream.Collectors;
 /**
  * @author csieflyman
  */
+@Slf4j
 @Service("organization")
 public class OrganizationServiceImpl extends PartyServiceImpl<Organization> implements OrganizationService {
-
-    private static final Logger logger = LoggerFactory.getLogger(OrganizationServiceImpl.class);
 
     @Autowired
     @Qualifier("partyIntervalTreeDao")
@@ -170,14 +168,14 @@ public class OrganizationServiceImpl extends PartyServiceImpl<Organization> impl
         if (descendantIds.isEmpty())
             return new HashSet<>();
 
-        List<? extends Party> parties = find(Query.create().in("id", new HashSet<>(descendantIds)));
+        List<? extends Party> parties = find(Query.create().where().in("id", new HashSet<>(descendantIds)).end());
         parties = parties.stream().sorted(Comparator.comparing(party -> descendantIds.indexOf(party.getId()))).collect(Collectors.toList());
         return new LinkedHashSet<>(parties);
     }
 
     private Set<Party> loadChildren(Set<Party> children) {
         Set<UUID> childrenIds = children.stream().map(Party::getId).collect(Collectors.toSet());
-        children = new HashSet<>(find(Query.create().in("id", childrenIds).fetchRelations(Party.RELATION_PARENT)));
+        children = new HashSet<>(find(Query.create().where().in("id", childrenIds).end().fetchRelations(Party.RELATION_PARENT)));
         if (children.size() != childrenIds.size()) {
             Set<UUID> foundChildrenIds = children.stream().map(Party::getId).collect(Collectors.toSet());
             throw new IllegalArgumentException(String.format("children id %s are not exist", CollectionUtils.subtract(childrenIds, foundChildrenIds)));

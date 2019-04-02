@@ -115,7 +115,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
         if (party.getId() != null) {
             return getById(party.getId(), relations);
         } else {
-            Query query = Query.create().eq("type", party.getType()).eq("identity", party.getIdentity());
+            Query query = Query.create().where().eq("type", party.getType()).eq("identity", party.getIdentity()).end();
             if (!CollectionUtils.isEmpty(relations)) {
                 query.fetchRelations(relations);
             }
@@ -132,7 +132,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
     public T getById(UUID id, Set<String> relations) {
         Preconditions.checkArgument(id != null, "id must not be null");
         
-        return CollectionUtils.isEmpty(relations) ? getById(id) : findOne(Query.create().eq("id", id).fetchRelations(relations))
+        return CollectionUtils.isEmpty(relations) ? getById(id) : findOne(Query.create().where().eq("id", id).end().fetchRelations(relations))
                 .orElseThrow(() -> new ObjectNotFoundException(String.format("party %s doesn't exist.", id)));
     }
 
@@ -146,7 +146,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
         Preconditions.checkNotNull(type);
         Preconditions.checkArgument(StringUtils.isNotEmpty(identity), "party identity must not be empty");
 
-        return findSize(Query.create().eq("type", type).eq("identity", identity)) > 0;
+        return findSize(Query.create().where().eq("type", type).eq("identity", identity).end()) > 0;
     }
 
     @Transactional
@@ -172,7 +172,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
         Map<String, Object> updatedValueMap = new HashMap<>();
         updatedValueMap.put("enabled", true);
-        partyDao.executeUpdate(updatedValueMap, Query.create().in("id", ids).getJunction());
+        partyDao.executeUpdate(updatedValueMap, Query.create().where().in("id", ids));
     }
 
     @Transactional
@@ -182,14 +182,14 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
 
         Map<String, Object> updatedValueMap = new HashMap<>();
         updatedValueMap.put("enabled", false);
-        partyDao.executeUpdate(updatedValueMap, Query.create().in("id", ids).getJunction());
+        partyDao.executeUpdate(updatedValueMap, Query.create().where().in("id", ids));
     }
 
     @Override
     public Set<Party> getParents(UUID id) {
         Preconditions.checkArgument(id != null, "party must not be null");
 
-        List<T> parents = find(Query.create().eq("children.id", id));
+        List<T> parents = find(Query.create().where().eq("children.id", id).end());
         return new HashSet<>(parents);
     }
 
@@ -197,7 +197,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
     public Set<Party> getChildren(UUID id) {
         Preconditions.checkArgument(id != null, "party must not be null");
 
-        List<T> children = find(Query.create().eq("parents.id", id));
+        List<T> children = find(Query.create().where().eq("parents.id", id).end());
         return new HashSet<>(children);
     }
 
@@ -209,7 +209,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
         if (ascendantIds.isEmpty())
             return new HashSet<>();
 
-        return new HashSet<>(find(Query.create().in("id", ascendantIds)));
+        return new HashSet<>(find(Query.create().where().in("id", ascendantIds).end()));
     }
 
     @Override
@@ -220,7 +220,7 @@ public class PartyServiceImpl<T extends Party> extends GenericServiceImpl<T, UUI
         if (descendantIds.isEmpty())
             return new HashSet<>();
 
-        return new HashSet<>(find(Query.create().in("id", descendantIds)));
+        return new HashSet<>(find(Query.create().where().in("id", descendantIds).end()));
     }
 
     @Transactional
