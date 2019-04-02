@@ -27,19 +27,19 @@ public class Query {
     private int pageSize = 10;
     private boolean onlySize = false;
     private Set<OrderBy> orderByList = new LinkedHashSet<>();
-    private Junction junction = new Conjunction();
+    private Junction junction;
     private Set<String> fetchRelations = new LinkedHashSet<>();
     private Set<String> fetchProperties = new LinkedHashSet<>();
     private Map<String, Object> paramMap = new HashMap<>(); //用來傳入自訂參數值
 
-    public static final String Q_PAGE_NO = "pageNo";
-    public static final String Q_PAGE_SIZE = "pageSize";
-    public static final String Q_SORT = "sort";
-    public static final String Q_ONLY_SIZE = "onlySize";
-    public static final String Q_PREDICATES = "predicates";
-    public static final String Q_PREDICATES_DISJUNCTION = "predicatesDisjunction";
+    private static final String Q_PAGE_NO = "pageNo";
+    private static final String Q_PAGE_SIZE = "pageSize";
+    private static final String Q_SORT = "sort";
+    private static final String Q_ONLY_SIZE = "onlySize";
+    private static final String Q_PREDICATES = "predicates";
+    private static final String Q_PREDICATES_DISJUNCTION = "predicatesDisjunction";
     public static final String Q_FETCH_RELATIONS = "relations";
-    public static final String Q_FETCH_FIELDS = "fields";
+    private static final String Q_FETCH_FIELDS = "fields";
 
     private DateTimeFormatter dateTimeFormatter = DateTimeUtils.UTC_DATE_TIME_FORMATTER;
 
@@ -75,7 +75,7 @@ public class Query {
         return params;
     }
 
-    private Query put(String param, String value) {
+    private void put(String param, String value) {
         Preconditions.checkArgument(param != null, "param must not be null");
         Preconditions.checkArgument(value != null, "value must not be null");
 
@@ -96,7 +96,7 @@ public class Query {
                 parsePredicateString(value);
                 break;
             case Q_PREDICATES_DISJUNCTION:
-                junction = new Disjunction(junction.getPredicates());
+                junction.setConjunction(false);
                 break;
             case Q_FETCH_RELATIONS:
                 fetchRelations(Sets.newHashSet(Splitter.on(",").split(value))
@@ -110,7 +110,6 @@ public class Query {
                 paramMap.put(param, value);
                 //throw new IllegalArgumentException("unknown query parameter: " + param);
         }
-        return this;
     }
 
     private void parseSortString(String s) {
@@ -142,11 +141,11 @@ public class Query {
         List<String> predicateStrings = Lists.newArrayList(Splitter.on(";").split(s));
         try {
             junction.add(predicateStrings.stream().map(String::trim).filter(StringUtils::isNotEmpty).map(ps -> Lists.newArrayList(Splitter.on(" ").split(ps)))
-                    .map(psList -> new Predicate(psList.get(0), Operator.exprValueOf(psList.get(1)),
+                    .map(psList -> new SimplePredicate(psList.get(0), Operator.exprValueOf(psList.get(1)),
                             psList.size() == 2 ? null : tryToConvertToDate(String.join(" ", psList.subList(2, psList.size())))))
                     .collect(Collectors.toCollection(LinkedHashSet::new)));
 
-            junction.getPredicates().stream().filter(ps -> ps.getOperator() == Operator.IN).forEach(predicate -> {
+            junction.getPredicates().stream().map(p -> (SimplePredicate) p).filter(ps -> ps.getOperator() == Operator.IN).forEach(predicate -> {
                 String valueString = ((String) predicate.getValue()).trim();
                 if (!(valueString.startsWith("(") && valueString.endsWith(")"))) {
                     throw new IllegalArgumentException(String.format("%s value string %s should be with the format: (e1, e2)", predicate.getProperty(), valueString));
@@ -222,100 +221,14 @@ public class Query {
         return isAsc ? orderByAsc(property) : orderByDesc(property);
     }
 
-    public Junction getJunction() {return junction;}
-
-    public boolean isConjunction() {
-        return junction.isConjunction();
+    public Junction or() {
+        junction = new Junction(false, this);
+        return junction;
     }
 
-    public Query conjunction(Conjunction conjunction) {
-        junction.add(conjunction);
-        return this;
-    }
-
-    public Query disjunction(Disjunction disjunction) {
-        junction.add(disjunction);
-        return this;
-    }
-
-    public Query conjunction(Predicate... predicates) {
-        junction.add(new Conjunction(Arrays.stream(predicates).collect(Collectors.toSet())));
-        return this;
-    }
-
-    public Query disjunction(Predicate... predicates) {
-        junction.add(new Disjunction(Arrays.stream(predicates).collect(Collectors.toSet())));
-        return this;
-    }
-
-    public Set<Predicate> getPredicates() {
-        return junction.getPredicates();
-    }
-
-    public Query literal(String literalSql) {
-        junction.add(Predicate.literal(literalSql));
-        return this;
-    }
-
-    public Query eq(String property, Object value) {
-        junction.add(Predicate.eq(property, value));
-        return this;
-    }
-
-    public Query ne(String property, Object value) {
-        junction.add(Predicate.ne(property, value));
-        return this;
-    }
-
-    public Query lt(String property, Comparable value) {
-        junction.add(Predicate.lt(property, value));
-        return this;
-    }
-
-    public Query le(String property, Comparable value) {
-        junction.add(Predicate.le(property, value));
-        return this;
-    }
-
-    public Query ge(String property, Comparable value) {
-        junction.add(Predicate.ge(property, value));
-        return this;
-    }
-
-    public Query gt(String property, Comparable value) {
-        junction.add(Predicate.gt(property, value));
-        return this;
-    }
-
-    public <T> Query between(String property, Comparable<T> geValue, Comparable<T> ltValue) {
-        junction.add(Predicate.ge(property, geValue));
-        junction.add(Predicate.lt(property, ltValue));
-        return this;
-    }
-
-    public Query in(String property, Set<?> values) {
-        junction.add(Predicate.in(property, values));
-        return this;
-    }
-
-    public Query like(String property, String value) {
-        junction.add(Predicate.like(property, value));
-        return this;
-    }
-
-    public Query isNull(String property) {
-        junction.add(Predicate.isNull(property));
-        return this;
-    }
-
-    public Query isNotNull(String property) {
-        junction.add(Predicate.isNotNull(property));
-        return this;
-    }
-
-    public Query isEmpty(String property) {
-        junction.add(Predicate.isEmpty(property));
-        return this;
+    public Junction where() {
+        junction = new Junction(true, this);
+        return junction;
     }
 
     public Query addParam(String property, Object value) {
@@ -362,26 +275,25 @@ public class Query {
     }
 
     public String toQueryString() {
-        Set<Predicate> predicates = getPredicates();
+        Set<Predicate> predicates = junction.getPredicates();
         StringBuilder sb = new StringBuilder();
         if(!predicates.isEmpty()) {
             StringBuilder sb2 = new StringBuilder();
             for(Predicate p: predicates) {
-                if(p.isJunction()) {
+                if(p instanceof Junction) {
                     throw new InvalidQueryException("junction is unsupported: " + p);
                 }
-                sb2.append(p.getProperty()).append(" ").append(Operator.getExprOfQueryString(p.getOperator())).append(" ");
-                if(Operator.isNoValue(p.getOperator())) {
+                SimplePredicate sp = (SimplePredicate) p;
+                sb2.append(sp.getProperty()).append(" ").append(Operator.getExprOfQueryString(sp.getOperator())).append(" ");
+                if(!Operator.isNoValue(sp.getOperator())) {
+                    sb2.append(convertValueToString(sp.getValue()));
                 }
-                else if(p.getOperator() == Operator.IN) {
-                    sb2.append("(").append(((Set<String>)p.getValue()).stream().map(this::convertValueToString).collect(Collectors.joining(","))).append(")");
-                }
-                else {
-                    sb2.append(convertValueToString(p.getValue()));
+                else if(sp.getOperator() == Operator.IN) {
+                    sb2.append("(").append(((Set<String>)sp.getValue()).stream().map(this::convertValueToString).collect(Collectors.joining(","))).append(")");
                 }
                 sb2.append(" ; ");
             }
-            sb2 = sb2.delete(sb2.lastIndexOf(";") - 1, sb2.length());
+            sb2.delete(sb2.lastIndexOf(";") - 1, sb2.length());
             String predicateValue = sb2.toString();
             try {
                 predicateValue = URLEncoder.encode(predicateValue, "UTF-8");
@@ -398,19 +310,19 @@ public class Query {
             for(OrderBy orderBy: orderByList) {
                 sb.append(orderBy.isAsc() ? "+" : "-").append(orderBy.getProperty()).append(",");
             }
-            sb = sb.delete(sb.length() - 1, sb.length());
+            sb.delete(sb.length() - 1, sb.length());
         }
         if(onlySize) {
             sb.append("&onlySize=true");
         }
-        if(!isConjunction()) {
+        if(!junction.isConjunction()) {
             sb.append("&predicatesDisjunction=true");
         }
         if(!fetchRelations.isEmpty()) {
-            sb.append("&relations=").append(fetchRelations.stream().collect(Collectors.joining(",")));
+            sb.append("&relations=").append(String.join(",", fetchRelations));
         }
         if(!fetchProperties.isEmpty()) {
-            sb.append("&fields=").append(fetchProperties.stream().collect(Collectors.joining(",")));
+            sb.append("&fields=").append(String.join(",", fetchProperties));
         }
         return sb.length() > 0 ? sb.substring(1) : null;
     }
@@ -426,29 +338,25 @@ public class Query {
     }
 
     public void populatePredicate() {
-        populateQueryParameterName(junction);
-        populateQueryParameterValue(junction);
+        populatePredicate(junction);
     }
 
     public static void populatePredicate(Junction junction) {
-        populateQueryParameterName(junction);
+        Map<String, Integer> propertyCountMap = new HashMap<>();
+        populateQueryParameterName(propertyCountMap, junction);
         populateQueryParameterValue(junction);
     }
 
-    private static void populateQueryParameterName(Junction junction) {
-        Map<String, Integer> propertyCountMap = new HashMap<>();
-        for (Predicate predicate : junction.getPredicates()) {
-            if(predicate.isJunction()) {
-                ((Junction)predicate).getPredicates().forEach(p -> populateQueryParameterName(propertyCountMap, p));
-            }
-            else {
-                populateQueryParameterName(propertyCountMap, predicate);
-            }
+    private static void populateQueryParameterName(Map<String, Integer> propertyCountMap, Predicate predicate) {
+        if(predicate instanceof Junction) {
+            ((Junction)predicate).getPredicates().forEach(p -> populateQueryParameterName(propertyCountMap, predicate));
+        }
+        else {
+            populateQueryParameterName(propertyCountMap, (SimplePredicate)predicate);
         }
     }
 
-    private static void populateQueryParameterName(Map<String, Integer> propertyCountMap, Predicate predicate) {
-        Preconditions.checkArgument(!predicate.isJunction());
+    private static void populateQueryParameterName(Map<String, Integer> propertyCountMap, SimplePredicate predicate) {
         String property = predicate.getProperty();
         if (propertyCountMap.containsKey(property)) {
             propertyCountMap.put(property, (propertyCountMap.get(property) + 1));
@@ -463,20 +371,17 @@ public class Query {
     }
 
     //假設不必型別轉換 value
-    private static void populateQueryParameterValue(Junction junction) {
-        for (Predicate predicate : junction.getPredicates()) {
-            if(predicate.isJunction()) {
-                ((Junction)predicate).getPredicates().forEach(Query::populateQueryParameterValue);
-            }
-            else {
-                populateQueryParameterValue(predicate);
-            }
+    private static void populateQueryParameterValue(Predicate predicate) {
+        if(predicate instanceof Junction) {
+            ((Junction)predicate).getPredicates().forEach(Query::populateQueryParameterValue);
+        }
+        else {
+            populateQueryParameterValue((SimplePredicate)predicate);
         }
     }
 
     //假設不必型別轉換 value
-    private static void populateQueryParameterValue(Predicate predicate) {
-        Preconditions.checkArgument(!predicate.isJunction());
+    private static void populateQueryParameterValue(SimplePredicate predicate) {
         if (Operator.isNoValue(predicate.getOperator())) {
             return;
         }

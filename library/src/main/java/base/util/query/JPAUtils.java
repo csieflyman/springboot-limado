@@ -1,19 +1,16 @@
-package base.dao;
+package base.util.query;
 
 import base.exception.InternalServerErrorException;
 import base.exception.InvalidEntityException;
-import base.util.query.*;
+import base.exception.InvalidQueryException;
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Id;
+import javax.persistence.*;
+import javax.persistence.criteria.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
@@ -32,13 +29,12 @@ public class JPAUtils {
     }
 
     public static String buildNativeSql(String tableAlias, Class rootClass, Query query, String fromStatement) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(buildSelectClause(tableAlias, rootClass, query)).append(" from ").append(fromStatement)
-                .append(" ").append(buildWhereClause(tableAlias, query.getJunction()))
-                .append(" ").append(buildOrderByClause(tableAlias, query.getOrderByList())).toString();
+        return buildSelectClause(tableAlias, rootClass, query) + " from " + fromStatement +
+                " " + buildWhereClause(tableAlias, query.where()) +
+                " " + buildOrderByClause(tableAlias, query.getOrderByList());
     }
 
-    public static String buildSelectClause(String tableAlias, Class rootClass, Query query) {
+    private static String buildSelectClause(String tableAlias, Class rootClass, Query query) {
         if(query.isOnlySize()) {
             return "select count(*) as count";
         }
@@ -76,14 +72,14 @@ public class JPAUtils {
         return "select " + columnNameAliasMap.entrySet().stream().map(entry -> entry.getKey() + " as " + entry.getValue()).collect(Collectors.joining(", "));
     }
 
-    public static String buildWhereClause(String tableAlias, Junction junction) {
+    private static String buildWhereClause(String tableAlias, Junction junction) {
         if (junction.getPredicates().isEmpty())
             return "";
 
         Query.populatePredicate(junction);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("where ");
+        sb.append("and ");
         for (Predicate predicate : junction.getPredicates()) {
             sb.append(predicateToSql(tableAlias, predicate));
             if (junction.isConjunction())
@@ -100,7 +96,7 @@ public class JPAUtils {
         return sb.toString();
     }
 
-    public static String buildOrderByClause(String tableAlias, Set<OrderBy> orderByList) {
+    private static String buildOrderByClause(String tableAlias, Set<OrderBy> orderByList) {
         if (orderByList.isEmpty())
             return "";
 
@@ -125,23 +121,112 @@ public class JPAUtils {
     }
 
     public static String getIdPropertyName(Class clazz) {
-        return Stream.of(clazz.getFields()).filter(JPAUtils::isIdColumn).map(Field::getName).findFirst().get();
+        return Stream.of(clazz.getFields()).filter(JPAUtils::isIdColumn).map(Field::getName).findFirst().orElseThrow(() -> new InvalidEntityException("id isn't defined"));
+    }
+
+    public static <T> CriteriaQuery<Tuple> toJpaQuery(Query query, CriteriaBuilder cb, Class<T> clazz) {
+        CriteriaQuery<Tuple> jpaQuery = cb.createTupleQuery();
+        Root<T> root = jpaQuery.from(clazz);
+
+        if(query.getFetchProperties().isEmpty()) {
+            jpaQuery.multiselect(JPAUtils.getPropertyNames(clazz).stream().map(p -> (Selection<?>)toPath(root, p).alias(p)).collect(Collectors.toList()));
+        }
+        else {
+            jpaQuery.multiselect(query.getFetchProperties().stream().map(p -> (Selection<?>)toPath(root, p).alias(p)).collect(Collectors.toList()));
+        }
+        if(!query.getFetchRelations().isEmpty()) {
+            jpaQuery.multiselect(query.getFetchRelations().stream().map(r -> (Selection<?>)toJoin(root, r).alias(r)).collect(Collectors.toList()));
+        }
+
+        jpaQuery.where(toJPAPredicate(cb, root, query.where()));
+
+        if(!query.isOrderByEmpty()) {
+            jpaQuery.orderBy(query.getOrderByList().stream().map(orderBy -> orderBy.isAsc() ?
+                    cb.asc(toPath(root, orderBy.getProperty())) : cb.desc(toPath(root, orderBy.getProperty()))).collect(Collectors.toList()));
+        }
+        return jpaQuery;
+    }
+
+    public static <T> javax.persistence.criteria.Predicate toJPAPredicate(CriteriaBuilder cb, Root<T> root, Junction junction) {
+        javax.persistence.criteria.Predicate[] pArray = junction.getPredicates().stream().map(p -> ToJPAPredicate(cb, root, p))
+                .toArray(javax.persistence.criteria.Predicate[]::new);
+        return junction.isConjunction() ? cb.and(pArray) : cb.or(pArray);
+    }
+
+    private static <T> javax.persistence.criteria.Predicate ToJPAPredicate(CriteriaBuilder cb, Root<T> root, Predicate predicate) {
+        if(predicate instanceof Junction) {
+            return toJPAPredicate(cb, root, (Junction) predicate);
+        }
+        else {
+            SimplePredicate simplePredicate = (SimplePredicate) predicate;
+            if(simplePredicate.isLiteralSql()) {
+                throw new InvalidQueryException("literal sql is unsupported: " + predicate);
+            }
+            String property = simplePredicate.getProperty();
+            Object value = simplePredicate.getValue();
+            switch (simplePredicate.getOperator()) {
+                case EQ:
+                    return cb.equal(toPath(root, property), value);
+                case NE:
+                    return cb.notEqual(toPath(root, property), value);
+                case GT:
+                    return cb.greaterThan(toPath(root, property), (Comparable) value);
+                case GE:
+                    return cb.greaterThanOrEqualTo(toPath(root, property), (Comparable) value);
+                case LT:
+                    return cb.lessThan(toPath(root, property), (Comparable) value);
+                case LE:
+                    return cb.lessThanOrEqualTo(toPath(root, property), (Comparable) value);
+                case IN:
+                    return toPath(root, property).in((Collection) value);
+                case LIKE:
+                    return cb.like(toPath(root, property), (String)value);
+                case IS_NULL:
+                    return cb.isNull(toPath(root, property));
+                case IS_NOT_NULL:
+                    return cb.isNotNull(toPath(root, property));
+                default:
+                    throw new InvalidQueryException("invalid predicate operator: " + predicate);
+            }
+        }
+    }
+
+    private static <T> Path toPath(Root<T> root, String propertyPath) {
+        String[] segments = propertyPath.split("\\.");
+        Path path = root.get(segments[0]);
+        if(segments.length > 1) {
+            for(int i = 1; i < segments.length; i++) {
+                path = path.get(segments[i]);
+            }
+        }
+        return path;
+    }
+
+    private static <T> Join toJoin(Root<T> root, String relationPath) {
+        String[] segments = relationPath.split("\\.");
+        Join join = Collection.class.isAssignableFrom(root.get(segments[0]).getJavaType()) ?
+                root.join(segments[0], JoinType.LEFT) : root.join(segments[0]);
+        if(segments.length > 1) {
+            for(int i = 1; i < segments.length; i++) {
+                join = Collection.class.isAssignableFrom(join.get(segments[i]).getJavaType()) ?
+                        join.join(segments[0], JoinType.LEFT) : join.join(segments[0]);
+            }
+        }
+        return join;
     }
 
     private static String predicateToSql(String tableAlias, Predicate predicate) {
-        if(predicate.isJunction()) {
+        if(predicate instanceof Junction) {
             Junction junction = (Junction) predicate;
-            return "(" + (junction.getPredicates().stream().map(p -> predicateToSql2(tableAlias, p))
+            return "(" + (junction.getPredicates().stream().map(p -> predicateToSql(tableAlias, p))
                     .collect(Collectors.joining(junction.isConjunction() ? " and " : " or "))) + ")";
         }
         else {
-            return predicateToSql2(tableAlias, predicate);
+            return simplePredicateToSql(tableAlias, (SimplePredicate)predicate);
         }
     }
 
-    private static String predicateToSql2(String tableAlias, Predicate predicate) {
-        Preconditions.checkArgument(!predicate.isJunction());
-
+    private static String simplePredicateToSql(String tableAlias, SimplePredicate predicate) {
         if(predicate.isLiteralSql()) {
             return predicate.getLiteralValue();
         }
@@ -260,26 +345,26 @@ public class JPAUtils {
         return field.isAnnotationPresent(Basic.class) || field.isAnnotationPresent(Column.class) || field.isAnnotationPresent(Id.class);
     }
 
-    public static <T> List<T> toEntity(Class<T> clazz, List<Map<String, ? extends Object>> rows) {
+    public static <T> List<T> toEntity(Class<T> clazz, List<Map<String, Object>> rows) {
         log.debug("rows = {}", rows);
         Set<T> entitySet = new LinkedHashSet<>();
         boolean hasRelation = false;
-        for(Map<String, ? extends Object> row: rows) {
+        for(Map<String, Object> row: rows) {
             boolean onlyEntity = row.keySet().stream().noneMatch(columnName -> columnName.split("\\.").length >= 2);
             if(onlyEntity) {
-                T entity = newInstance(clazz);
+                Object entity = newInstance(clazz);
                 populateEntityProperties(entity, row);
-                entitySet.add(entity);
+                entitySet.add((T)entity);
             }
             else {
                 if (entitySet.isEmpty()) {
                     hasRelation = row.size() > row.keySet().stream().filter(columnName -> columnName.split("\\.").length == 2).count();
                 }
                 // 注意: entity 一定要有 default constructor，否則須傳入 newInstance function
-                T entity = newInstance(clazz);
+                Object entity = newInstance(clazz);
                 populateEntityProperties(entity, row.entrySet().stream().filter(entry -> entry.getKey().split("\\.").length == 2)
                         .collect(Collectors.toMap(entry -> entry.getKey().split("\\.")[1], Map.Entry::getValue)));
-                entitySet.add(entity);
+                entitySet.add((T)entity);
                 if (hasRelation) {
                     Map<String, Object> relationMap = row.entrySet().stream().filter(entry -> entry.getKey().split("\\.").length >= 3)
                             .collect(Collectors.toMap(entry -> entry.getKey().substring(entry.getKey().indexOf(".") + 1), Map.Entry::getValue));
@@ -290,7 +375,7 @@ public class JPAUtils {
         return new ArrayList<>(entitySet);
     }
 
-    private static void populateEntityProperties(Object entity, Map<String, ? extends Object> valueMap) {
+    private static void populateEntityProperties(Object entity, Map<String, Object> valueMap) {
         try {
             BeanUtils.populate(entity, valueMap);
         } catch (Throwable e) {
@@ -348,7 +433,7 @@ public class JPAUtils {
         }
     }
 
-    private static <T> T newInstance(Class<T> clazz) {
+    private static Object newInstance(Class clazz) {
         try {
             return clazz.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
