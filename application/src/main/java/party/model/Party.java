@@ -64,7 +64,7 @@ public abstract class Party extends EntityModel<UUID> implements Resource<UUID> 
     private PartyType type;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "party_rel", joinColumns = {@JoinColumn(name = "parent")}, inverseJoinColumns = {@JoinColumn(name = "children")})
+    @JoinTable(name = "party_rel", joinColumns = {@JoinColumn(name = "parent_id")}, inverseJoinColumns = {@JoinColumn(name = "child_id")})
     private Set<Party> children = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "children")

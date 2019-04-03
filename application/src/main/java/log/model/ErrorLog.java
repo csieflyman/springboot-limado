@@ -48,9 +48,6 @@ public class ErrorLog extends BaseModel<Long> {
     private String identity;
 
     @Column
-    private String source;
-
-    @Column
     private String api;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateTimeUtils.DATE_TIME_PATTERN, timezone = DateTimeUtils.LOCAL_ZONE_ID_STRING)
