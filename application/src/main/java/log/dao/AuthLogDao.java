@@ -1,6 +1,6 @@
-package auth.dao;
+package log.dao;
 
-import auth.model.AuthLog;
+import log.model.AuthLog;
 import base.dao.GenericDao;
 
 /**

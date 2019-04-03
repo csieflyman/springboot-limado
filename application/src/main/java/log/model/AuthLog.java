@@ -1,4 +1,4 @@
-package auth.model;
+package log.model;
 
 import base.model.BaseModel;
 import base.util.DateTimeUtils;
@@ -22,7 +22,7 @@ public class AuthLog extends BaseModel<Long> {
     private static final long serialVersionUID = -155256950440207989L;
 
     public AuthLog(String account) {
-        this.account = account.length() > 255 ? account.substring(0, 255) : account;
+        this.account = account.length() > 30 ? account.substring(0, 30) : account;
     }
 
     @Id
@@ -31,7 +31,7 @@ public class AuthLog extends BaseModel<Long> {
     @Column
     private String account;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateTimeUtils.DATE_TIME_PATTERN)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateTimeUtils.DATE_TIME_PATTERN, timezone = DateTimeUtils.LOCAL_ZONE_ID_STRING)
     @Column(updatable = false, insertable = false)
     private Date occurAt;
 

@@ -6,13 +6,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringExclude;
 import util.Subject;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.util.Date;
 
 /**
@@ -21,7 +21,6 @@ import java.util.Date;
 @Getter
 @Setter
 @Entity
-@Table(name = "error_log")
 public class ErrorLog extends BaseModel<Long> {
 
     public ErrorLog(Subject subject) {
@@ -68,24 +67,5 @@ public class ErrorLog extends BaseModel<Long> {
     @Override
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(getId()).toHashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-
-        ErrorLog other = (ErrorLog) obj;
-        return new EqualsBuilder().append(getId(), other.getId()).isEquals();
-    }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this);
     }
 }

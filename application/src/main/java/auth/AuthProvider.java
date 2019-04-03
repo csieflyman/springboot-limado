@@ -1,4 +1,4 @@
-package auth.provider;
+package auth;
 
 /**
  * @author csieflyman

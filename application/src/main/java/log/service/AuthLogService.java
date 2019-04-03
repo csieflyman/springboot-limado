@@ -1,6 +1,6 @@
-package auth.service;
+package log.service;
 
-import auth.model.AuthLog;
+import log.model.AuthLog;
 /**
  * @author csieflyman
  */
