@@ -20,13 +20,17 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class AbstractJPADaoImpl<T extends Identifiable<ID>, ID extends Serializable> implements GenericDao<T, ID> {
 
-    @PersistenceContext
-    protected EntityManager em;
+    private EntityManager em;
 
     protected Class<T> clazz;
 
     public AbstractJPADaoImpl() {
         clazz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    }
+
+    // can't inject EntityManager by constructor https://github.com/spring-projects/spring-framework/issues/15076
+    protected void setEntityManager(EntityManager em) {
+        this.em = em;
     }
 
     protected T newInstance() {

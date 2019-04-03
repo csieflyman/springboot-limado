@@ -6,6 +6,9 @@ import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,6 +22,14 @@ public abstract class IntervalTreeDaoImpl<NodeType extends IntervalTreeNode<Node
     private static final Logger logger = LoggerFactory.getLogger(DagEdgeDaoImpl.class);
 
     abstract protected String getTreeType();
+
+    @PersistenceContext
+    protected EntityManager em;
+
+    @PostConstruct
+    public void init() {
+        setEntityManager(em);
+    }
 
     @Override
     public void addChild(NodeIdType parentNodeId, NodeIdType childNodeId) {

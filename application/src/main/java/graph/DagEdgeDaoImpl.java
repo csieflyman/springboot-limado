@@ -6,6 +6,9 @@ import base.util.query.Query;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
@@ -18,6 +21,14 @@ import java.util.stream.Collectors;
 public abstract class DagEdgeDaoImpl<DagEdgeType extends DagEdge<VertexID>, VertexID extends Serializable> extends AbstractJPADaoImpl<DagEdgeType, Long> implements DagEdgeDao<VertexID> {
 
     abstract protected String getDagId();
+
+    @PersistenceContext
+    protected EntityManager em;
+
+    @PostConstruct
+    public void init() {
+        setEntityManager(em);
+    }
 
     @Override
     public void addEdges(VertexID startVertexId, VertexID endVertexId) {

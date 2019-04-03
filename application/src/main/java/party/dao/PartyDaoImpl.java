@@ -8,6 +8,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Repository;
 import party.model.Party;
 
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnitUtil;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,6 +21,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @Repository("partyDao")
 public class PartyDaoImpl<T extends Party> extends AbstractJPADaoImpl<T, UUID> implements PartyDao<T> {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @PostConstruct
+    public void init() {
+        setEntityManager(em);
+    }
 
     @Override
     public void addChild(Party parent, Party child) {
